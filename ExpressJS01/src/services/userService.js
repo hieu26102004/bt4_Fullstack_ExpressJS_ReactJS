@@ -5,6 +5,15 @@ const jwt = require("jsonwebtoken");
 
 const saltRounds = 10;
 
+// Tìm user theo email (phục vụ quên mật khẩu)
+const findUserByEmail = async (email) => {
+  try {
+    return await User.findOne({ email });
+  } catch (error) {
+    return null;
+  }
+};
+
 const createUserService = async (name, email, password) => {
   try {
     // Check if user already exists
@@ -80,8 +89,53 @@ const getUserService = async () => {
   }
 };
 
+const verifyOTPAndResetPasswordService = async (email, otp, newPassword) => {
+  const user = await findUserByEmail(email);
+  if (!user || !user.resetOTP || !user.resetOTPExpire) {
+    return { code: 1, message: 'Không hợp lệ hoặc chưa yêu cầu OTP' };
+  }
+  if (user.resetOTP !== otp) {
+    return { code: 2, message: 'OTP không đúng' };
+  }
+  if (user.resetOTPExpire < new Date()) {
+    return { code: 3, message: 'OTP đã hết hạn' };
+  }
+  const hashPassword = await bcrypt.hash(newPassword, saltRounds);
+  user.password = hashPassword;
+  user.resetOTP = undefined;
+  user.resetOTPExpire = undefined;
+  await user.save();
+  return { code: 0, message: 'Đặt lại mật khẩu thành công' };
+};
+
+// Gửi OTP quên mật khẩu
+const sendForgotPasswordOTPService = async (email, sendMail) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return { code: 1, message: 'Email không tồn tại' };
+  }
+  // Tạo mã OTP 6 số
+  const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+  user.resetOTP = resetToken;
+  user.resetOTPExpire = new Date(Date.now() + 5 * 60 * 1000);
+  await user.save();
+  try {
+    await sendMail(
+      email,
+      'Đặt lại mật khẩu',
+      `Mã đặt lại mật khẩu của bạn: ${resetToken}`,
+      `<p>Mã đặt lại mật khẩu của bạn: <b>${resetToken}</b></p>`
+    );
+    return { code: 0, message: 'Đã gửi hướng dẫn đặt lại mật khẩu qua email' };
+  } catch (err) {
+    return { code: 2, message: 'Gửi email thất bại', error: err.message };
+  }
+};
 module.exports = {
   createUserService,
   loginService,
-  getUserService
+  getUserService,
+  findUserByEmail,
+  verifyOTPAndResetPasswordService,
+  sendForgotPasswordOTPService,
 };
