@@ -20,3 +20,13 @@ export const getUserApi = () => {
 export const getApiUrl = () => {
   return "/api/v1";
 };
+
+export const forgotPasswordApi = (email: string) => {
+  const URL_API = "/api/v1/forgot-password";
+  return axios.post(URL_API, { email });
+};
+
+export const resetPasswordApi = (email: string, otp: string, newPassword: string) => {
+  const URL_API = "/api/v1/reset-password";
+  return axios.post(URL_API, { email, otp, newPassword });
+};
