@@ -7,6 +7,7 @@ const apiRoutes = require('./routes/api'); // import routes
 const homeController = require('./controllers/homeController');
 const mongoose = require('mongoose');
 const webAPI = require('./config/database');
+const DB_TYPE = process.env.DB_TYPE || 'mongodb';
 
 const app = express(); // cấu hình app là express
 const port = process.env.PORT || 8888; // nếu không có PORT trong env thì dùng 8888
@@ -20,16 +21,22 @@ app.use(express.urlencoded({ extended: true })); // for form data
 app.use('/api/v1', apiRoutes);
 app.get('/', homeController.getHomepage);
 
-// Kết nối database
-webAPI();
 
-app.listen(port, () => {
+// Kết nối database (nếu cần)
+// webAPI(); // Không cần gọi nếu đã connect trong config/database.js
+
+// Nếu dùng MySQL, sync Sequelize để tạo bảng
+if (DB_TYPE === 'mysql') {
   (async () => {
     try {
-  // await mongoose.connect(webAPI.connection()); // redundant, already connected
-      console.log(`Backend Nodejs App listening on port ${port}`);
-    } catch (error) {
-      console.error('=> Error connect to DB: ', error);
+      await webAPI.sync();
+      console.log('Sequelize sync done (MySQL)');
+    } catch (err) {
+      console.error('Sequelize sync error:', err);
     }
   })();
+}
+
+app.listen(port, () => {
+  console.log(`Backend Nodejs App listening on port ${port}`);
 });
