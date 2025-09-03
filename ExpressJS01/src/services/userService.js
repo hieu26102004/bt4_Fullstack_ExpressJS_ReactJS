@@ -8,7 +8,11 @@ const saltRounds = 10;
 // Tìm user theo email (phục vụ quên mật khẩu)
 const findUserByEmail = async (email) => {
   try {
-    return await User.findOne({ email });
+    if (User.sequelize) {
+      return await User.findOne({ where: { email } });
+    } else {
+      return await User.findOne({ email });
+    }
   } catch (error) {
     return null;
   }
@@ -17,7 +21,12 @@ const findUserByEmail = async (email) => {
 const createUserService = async (name, email, password) => {
   try {
     // Check if user already exists
-    const user = await User.findOne({ email });
+    let user;
+    if (User.sequelize) {
+      user = await User.findOne({ where: { email } });
+    } else {
+      user = await User.findOne({ email });
+    }
     if (user) {
       console.log(`>>> User exists, chọn 1 email khác: ${email}`);
       return null;
@@ -43,7 +52,12 @@ const createUserService = async (name, email, password) => {
 
 const loginService = async (email, password) => {
   try {
-    const user = await User.findOne({ email });
+    let user;
+    if (User.sequelize) {
+      user = await User.findOne({ where: { email } });
+    } else {
+      user = await User.findOne({ email });
+    }
     if (!user) {
       return {
         code: 2,

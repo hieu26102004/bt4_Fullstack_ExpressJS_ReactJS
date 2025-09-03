@@ -20,7 +20,7 @@ const RegisterPage = () => {
     try {
       const res = await createUserApi(name, email, password);
       const data = res.data as RegisterResponse;
-      if (data?._id) {
+      if (data) {
         notification.success({
           message: 'Đăng ký thành công',
           description: 'Bạn có thể đăng nhập ngay bây giờ.',

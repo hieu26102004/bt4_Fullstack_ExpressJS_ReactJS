@@ -30,3 +30,82 @@ export const resetPasswordApi = (email: string, otp: string, newPassword: string
   const URL_API = "/api/v1/reset-password";
   return axios.post(URL_API, { email, otp, newPassword });
 };
+
+// Category APIs
+export const getAllCategoriesApi = () => {
+  const URL_API = "/api/v1/categories";
+  return axios.get(URL_API);
+};
+
+export const getCategoryBySlugApi = (slug: string) => {
+  const URL_API = `/api/v1/categories/slug/${slug}`;
+  return axios.get(URL_API);
+};
+
+// Product APIs
+export const getAllProductsApi = (params?: {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  categoryId?: string;
+  categorySlug?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+}) => {
+  const URL_API = "/api/v1/products";
+  return axios.get(URL_API, { params });
+};
+
+export const getProductsByCategoryApi = (categoryId: string, params?: {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+}) => {
+  const URL_API = `/api/v1/categories/${categoryId}/products`;
+  return axios.get(URL_API, { params });
+};
+
+export const getProductsByCategorySlugApi = (categorySlug: string, params?: {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+}) => {
+  const URL_API = `/api/v1/category/${categorySlug}/products`;
+  return axios.get(URL_API, { params });
+};
+
+export const getProductDetailApi = (productId: string) => {
+  const URL_API = `/api/v1/products/${productId}`;
+  return axios.get(URL_API);
+};
+
+export const getFeaturedProductsApi = (limit?: number) => {
+  const URL_API = "/api/v1/products/featured";
+  return axios.get(URL_API, { params: { limit } });
+};
+
+// Lazy Loading API
+export const loadMoreProductsApi = (params?: {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  categoryId?: string;
+  categorySlug?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+}) => {
+  const URL_API = "/api/v1/products/load-more";
+  return axios.get(URL_API, { params });
+};

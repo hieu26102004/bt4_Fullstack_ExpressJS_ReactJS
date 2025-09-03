@@ -8,6 +8,7 @@ import { Outlet } from "react-router-dom";
 import Header from "./components/layout/header.context";
 import axios from "./util/axios.customize";
 import { AuthContext } from "./components/context/auth.context";
+import "./styles/products.css";
 
 
 const App = () => {

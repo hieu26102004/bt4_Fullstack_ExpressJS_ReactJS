@@ -13,6 +13,8 @@ import LoginPage from "./pages/login.tsx";
 import RegisterPage from "./pages/register.tsx";
 import UserPage from "./pages/user.tsx";
 import HomePage from "./pages/home.tsx";
+import ProductsPage from "./pages/products.tsx";
+import CategoryPage from "./pages/category.tsx";
 import ForgotPassword from "./pages/forgot-password";
 import ResetPassword from "./pages/reset-password";
 import App from "./App";
@@ -27,6 +29,8 @@ const router = createBrowserRouter([
   { path: "login", element: <LoginPage /> },
   { path: "register", element: <RegisterPage /> },
   { path: "user", element: <UserPage /> },
+  { path: "products", element: <ProductsPage /> },
+  { path: "category/:categorySlug", element: <CategoryPage /> },
   { path: "forgot-password", element: <ForgotPassword /> },
   { path: "reset-password", element: <ResetPassword /> },
     ],
