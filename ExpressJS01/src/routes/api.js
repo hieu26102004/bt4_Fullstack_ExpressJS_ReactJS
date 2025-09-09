@@ -33,9 +33,15 @@ routerAPI.get('/categories/slug/:slug', categoryController.getCategoryBySlug);
 
 // Product routes
 routerAPI.get('/products', productController.getAllProducts);
+routerAPI.get('/products/search', productController.searchProducts); // Fuzzy search
+routerAPI.get('/products/search/suggestions', productController.getSearchSuggestions); // Search suggestions
 routerAPI.get('/products/featured', productController.getFeaturedProducts);
 routerAPI.get('/products/load-more', productController.loadMoreProducts); // Cho Lazy Loading
 routerAPI.get('/products/:productId', productController.getProductDetail);
+routerAPI.get('/products/:productId/similar', productController.getSimilarProducts); // Similar products
+
+// Admin/sync routes (có thể cần auth middleware)
+routerAPI.post('/admin/sync/elasticsearch', productController.syncToElasticsearch);
 
 // Product by category routes
 routerAPI.get('/categories/:categoryId/products', productController.getProductsByCategory);

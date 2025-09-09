@@ -2,6 +2,135 @@ const productService = require('../services/productService');
 const categoryService = require('../services/categoryService');
 
 const productController = {
+  // Tìm kiếm sản phẩm với Fuzzy Search
+  async searchProducts(req, res) {
+    try {
+      const {
+        query = '',
+        page = 1,
+        limit = 12,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        categoryId,
+        categorySlug,
+        minPrice,
+        maxPrice,
+        minRating,
+        maxRating,
+        hasDiscount,
+        inStock = true,
+        minViewCount,
+        tags
+      } = req.query;
+
+      let finalCategoryId = categoryId;
+
+      // Nếu có categorySlug, lấy categoryId từ slug
+      if (categorySlug && !categoryId) {
+        const categoryResult = await categoryService.getCategoryBySlug(categorySlug);
+        if (categoryResult.success) {
+          finalCategoryId = categoryResult.data._id;
+        }
+      }
+
+      const options = {
+        query: query.trim(),
+        page: parseInt(page),
+        limit: parseInt(limit),
+        sortBy,
+        sortOrder,
+        categoryId: finalCategoryId,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        minRating: minRating ? parseFloat(minRating) : undefined,
+        maxRating: maxRating ? parseFloat(maxRating) : undefined,
+        hasDiscount: hasDiscount === 'true',
+        inStock: inStock !== 'false',
+        minViewCount: minViewCount ? parseInt(minViewCount) : undefined,
+        tags: tags ? (Array.isArray(tags) ? tags : [tags]) : []
+      };
+
+      const result = await productService.searchProducts(options);
+
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error in searchProducts controller:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server',
+        error: error.message
+      });
+    }
+  },
+
+  // Lấy gợi ý tìm kiếm
+  async getSearchSuggestions(req, res) {
+    try {
+      const { q: query, limit = 10 } = req.query;
+
+      if (!query || query.trim().length < 2) {
+        return res.status(200).json({
+          success: true,
+          data: []
+        });
+      }
+
+      const result = await productService.getSearchSuggestions(query.trim(), parseInt(limit));
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error in getSearchSuggestions controller:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server',
+        error: error.message
+      });
+    }
+  },
+
+  // Lấy sản phẩm tương tự
+  async getSimilarProducts(req, res) {
+    try {
+      const { productId } = req.params;
+      const { limit = 6 } = req.query;
+
+      const result = await productService.getSimilarProducts(productId, parseInt(limit));
+
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error in getSimilarProducts controller:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server',
+        error: error.message
+      });
+    }
+  },
+
+  // Đồng bộ sản phẩm vào Elasticsearch
+  async syncToElasticsearch(req, res) {
+    try {
+      const result = await productService.syncAllProductsToElasticsearch();
+      
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error in syncToElasticsearch controller:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server',
+        error: error.message
+      });
+    }
+  },
+
   // Lấy tất cả sản phẩm với phân trang và filter
   async getAllProducts(req, res) {
     try {
@@ -160,18 +289,32 @@ const productController = {
         return res.status(404).json(result);
       }
 
-      // Lấy sản phẩm liên quan
-      const relatedResult = await productService.getRelatedProducts(
-        productId, 
-        result.data.categoryId._id || result.data.categoryId,
-        6
-      );
+      // Tăng view count
+      await productService.incrementViewCount(productId);
+
+      // Lấy sản phẩm tương tự (sử dụng Elasticsearch nếu có)
+      const similarResult = await productService.getSimilarProducts(productId, 6);
+      
+      // Fallback to related products nếu không có similar products
+      let relatedProducts = [];
+      if (similarResult.success && similarResult.data.length > 0) {
+        relatedProducts = similarResult.data;
+      } else {
+        const relatedResult = await productService.getRelatedProducts(
+          productId, 
+          result.data.categoryId._id || result.data.categoryId,
+          6
+        );
+        if (relatedResult.success) {
+          relatedProducts = relatedResult.data;
+        }
+      }
 
       const response = {
         success: true,
         data: {
           product: result.data,
-          relatedProducts: relatedResult.success ? relatedResult.data : []
+          relatedProducts: relatedProducts
         }
       };
 

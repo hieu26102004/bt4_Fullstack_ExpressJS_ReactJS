@@ -60,6 +60,10 @@ if (DB_TYPE === 'mongodb') {
       type: Number,
       default: 0
     },
+    viewCount: {
+      type: Number,
+      default: 0
+    },
     createdAt: {
       type: Date,
       default: Date.now
@@ -143,6 +147,10 @@ if (DB_TYPE === 'mongodb') {
       defaultValue: 0,
     },
     reviewCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    viewCount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     }

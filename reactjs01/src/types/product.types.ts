@@ -24,8 +24,11 @@ export interface Product {
   tags: string[];
   rating: number;
   reviewCount: number;
+  viewCount?: number;
   createdAt: string;
   updatedAt: string;
+  _score?: number; // For search relevance
+  highlight?: any; // For search highlights
 }
 
 // Pagination Types
@@ -63,13 +66,20 @@ export interface LazyLoadResponse {
 export interface ProductFilters {
   page?: number;
   limit?: number;
-  sortBy?: 'createdAt' | 'price' | 'name' | 'rating';
+  sortBy?: 'createdAt' | 'price' | 'name' | 'rating' | 'viewCount';
   sortOrder?: 'asc' | 'desc';
   categoryId?: string;
   categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
+  minRating?: number;
+  maxRating?: number;
+  hasDiscount?: boolean;
+  inStock?: boolean;
+  minViewCount?: number;
+  tags?: string[];
   search?: string;
+  query?: string; // For fuzzy search
 }
 
 // Sort Options
@@ -88,4 +98,23 @@ export const sortOptions: SortOption[] = [
   { label: 'Tên A-Z', value: 'name-asc', sortBy: 'name', sortOrder: 'asc' },
   { label: 'Tên Z-A', value: 'name-desc', sortBy: 'name', sortOrder: 'desc' },
   { label: 'Đánh giá cao nhất', value: 'rating-desc', sortBy: 'rating', sortOrder: 'desc' },
+  { label: 'Xem nhiều nhất', value: 'view-desc', sortBy: 'viewCount', sortOrder: 'desc' },
+  { label: 'Liên quan nhất', value: 'relevance', sortBy: 'createdAt', sortOrder: 'desc' }, // For search
 ];
+
+// Search suggestion types
+export interface SearchSuggestion {
+  text: string;
+  _source: {
+    name: string;
+    price: number;
+    images: string[];
+  };
+}
+
+export interface SearchInfo {
+  query: string;
+  totalHits: number;
+  maxScore?: number;
+  usingFallback?: boolean;
+}

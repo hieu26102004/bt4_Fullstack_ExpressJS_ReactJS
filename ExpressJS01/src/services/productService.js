@@ -1,7 +1,146 @@
 const Product = require('../models/product');
 const Category = require('../models/category');
+const elasticSearchService = require('./elasticSearchService');
+const { elasticsearchUtils } = require('../config/elasticsearch');
 
 const productService = {
+  // Tìm kiếm sản phẩm với Fuzzy Search (Elasticsearch)
+  async searchProducts(options = {}) {
+    try {
+      // Thử sử dụng Elasticsearch trước
+      const elasticResult = await elasticSearchService.fuzzySearch(options);
+      
+      if (elasticResult.success) {
+        return elasticResult;
+      }
+      
+      // Fallback to regular MongoDB search nếu Elasticsearch fail
+      return await this.getAllProducts(options);
+      
+    } catch (error) {
+      console.error('Error in searchProducts:', error);
+      // Fallback to regular search
+      return await this.getAllProducts(options);
+    }
+  },
+
+  // Lấy gợi ý tìm kiếm
+  async getSearchSuggestions(query, limit = 10) {
+    try {
+      return await elasticSearchService.getSearchSuggestions(query, limit);
+    } catch (error) {
+      console.error('Error in getSearchSuggestions:', error);
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi lấy gợi ý tìm kiếm',
+        error: error.message
+      };
+    }
+  },
+
+  // Tìm sản phẩm tương tự
+  async getSimilarProducts(productId, limit = 6) {
+    try {
+      const elasticResult = await elasticSearchService.findSimilarProducts(productId, limit);
+      
+      if (elasticResult.success) {
+        return elasticResult;
+      }
+      
+      // Fallback to category-based related products
+      const product = await Product.findById(productId);
+      if (!product) {
+        return { success: false, message: 'Không tìm thấy sản phẩm' };
+      }
+      
+      return await this.getRelatedProducts(productId, product.categoryId, limit);
+      
+    } catch (error) {
+      console.error('Error in getSimilarProducts:', error);
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi tìm sản phẩm tương tự',
+        error: error.message
+      };
+    }
+  },
+
+  // Đồng bộ sản phẩm vào Elasticsearch
+  async syncProductToElasticsearch(product) {
+    try {
+      // Populate category info if needed
+      if (typeof product.categoryId === 'string') {
+        const populatedProduct = await Product.findById(product._id).populate('categoryId').lean();
+        if (populatedProduct) {
+          product = populatedProduct;
+        }
+      }
+      
+      await elasticsearchUtils.indexProduct(product);
+      return true;
+    } catch (error) {
+      console.error('Error syncing product to Elasticsearch:', error);
+      return false;
+    }
+  },
+
+  // Đồng bộ tất cả sản phẩm vào Elasticsearch
+  async syncAllProductsToElasticsearch() {
+    try {
+      console.log('Starting bulk sync to Elasticsearch...');
+      
+      const products = await Product.find({ isActive: true })
+        .populate('categoryId', 'name slug')
+        .lean();
+      
+      if (products.length > 0) {
+        await elasticsearchUtils.bulkIndexProducts(products);
+        console.log(`✅ Successfully synced ${products.length} products to Elasticsearch`);
+      }
+      
+      return {
+        success: true,
+        message: `Đã đồng bộ ${products.length} sản phẩm vào Elasticsearch`,
+        count: products.length
+      };
+    } catch (error) {
+      console.error('Error syncing all products to Elasticsearch:', error);
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi đồng bộ sản phẩm vào Elasticsearch',
+        error: error.message
+      };
+    }
+  },
+
+  // Tăng view count cho sản phẩm
+  async incrementViewCount(productId) {
+    try {
+      const product = await Product.findByIdAndUpdate(
+        productId,
+        { $inc: { viewCount: 1 } },
+        { new: true }
+      ).populate('categoryId', 'name slug');
+
+      if (product) {
+        // Sync to Elasticsearch
+        await this.syncProductToElasticsearch(product);
+      }
+
+      return {
+        success: true,
+        data: product
+      };
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+      return {
+        success: false,
+        message: 'Có lỗi xảy ra khi cập nhật lượt xem',
+        error: error.message
+      };
+    }
+  },
+
   // Lấy sản phẩm theo danh mục với phân trang
   async getProductsByCategory(categoryId, options = {}) {
     try {

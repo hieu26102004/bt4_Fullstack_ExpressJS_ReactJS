@@ -7,6 +7,7 @@ const apiRoutes = require('./routes/api'); // import routes
 const homeController = require('./controllers/homeController');
 const mongoose = require('mongoose');
 const webAPI = require('./config/database');
+const { elasticsearchUtils } = require('./config/elasticsearch');
 const DB_TYPE = process.env.DB_TYPE || 'mongodb';
 
 const app = express(); // cấu hình app là express
@@ -36,6 +37,22 @@ if (DB_TYPE === 'mysql') {
     }
   })();
 }
+
+// Khởi tạo Elasticsearch
+(async () => {
+  try {
+    const isConnected = await elasticsearchUtils.checkConnection();
+    if (isConnected) {
+      await elasticsearchUtils.createIndexIfNotExists();
+      console.log('✅ Elasticsearch initialization completed');
+    } else {
+      console.log('⚠️ Elasticsearch not available, will use fallback search');
+    }
+  } catch (error) {
+    console.error('❌ Elasticsearch initialization failed:', error.message);
+    console.log('⚠️ Will use fallback search instead');
+  }
+})();
 
 app.listen(port, () => {
   console.log(`Backend Nodejs App listening on port ${port}`);

@@ -109,3 +109,41 @@ export const loadMoreProductsApi = (params?: {
   const URL_API = "/api/v1/products/load-more";
   return axios.get(URL_API, { params });
 };
+
+// Advanced Search APIs
+export const searchProductsApi = (params?: {
+  query?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  categoryId?: string;
+  categorySlug?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  maxRating?: number;
+  hasDiscount?: boolean;
+  inStock?: boolean;
+  minViewCount?: number;
+  tags?: string[];
+}) => {
+  const URL_API = "/api/v1/products/search";
+  return axios.get(URL_API, { params });
+};
+
+export const searchProductSuggestions = (query: string, limit?: number) => {
+  const URL_API = "/api/v1/products/search/suggestions";
+  return axios.get(URL_API, { params: { q: query, limit } });
+};
+
+export const getSimilarProductsApi = (productId: string, limit?: number) => {
+  const URL_API = `/api/v1/products/${productId}/similar`;
+  return axios.get(URL_API, { params: { limit } });
+};
+
+// Admin APIs
+export const syncToElasticsearchApi = () => {
+  const URL_API = "/api/v1/admin/sync/elasticsearch";
+  return axios.post(URL_API);
+};
