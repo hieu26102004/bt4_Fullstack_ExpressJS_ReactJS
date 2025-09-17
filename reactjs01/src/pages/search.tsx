@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product, ProductFilters, SearchInfo } from '../types/product.types';
 import { searchProductsApi, getAllCategoriesApi } from '../util/api';
 import AdvancedSearch from '../components/product/AdvancedSearch';
@@ -9,6 +9,7 @@ import '../styles/search.css';
 
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +24,11 @@ const SearchPage: React.FC = () => {
     limit: 12
   });
   const [categories, setCategories] = useState<any[]>([]);
+
+  // Handler for product click
+  const handleProductClick = (productId: string) => {
+    navigate(`/products/${productId}`);
+  };
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState<ProductFilters>(() => {
@@ -147,7 +153,31 @@ const SearchPage: React.FC = () => {
   return (
     <div className="search-page">
       <div className="container">
-        <h1 className="page-title">Tìm kiếm sản phẩm</h1>
+        {/* Page Intro */}
+        <div style={{
+          textAlign: 'center',
+          padding: '40px 20px',
+          marginBottom: '30px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '12px',
+          color: 'white'
+        }}>
+          <h1 style={{ 
+            fontSize: '36px', 
+            fontWeight: 'bold',
+            margin: '0 0 16px 0',
+            color: 'white'
+          }}>
+            🔍 Tìm kiếm sản phẩm
+          </h1>
+          <p style={{ 
+            fontSize: '18px', 
+            margin: '0',
+            color: 'rgba(255,255,255,0.9)'
+          }}>
+            Sử dụng bộ lọc thông minh để tìm sản phẩm phù hợp nhất với bạn
+          </p>
+        </div>
         
         {/* Search Info */}
         {searchInfo && (
@@ -269,6 +299,7 @@ const SearchPage: React.FC = () => {
                   initialProducts={products}
                   useLazyLoading={false}
                   useInfiniteScroll={false}
+                  onProductClick={handleProductClick}
                 />
 
                 {/* Pagination */}

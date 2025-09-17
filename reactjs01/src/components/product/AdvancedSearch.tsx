@@ -27,8 +27,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         setIsLoadingSuggestions(true);
         try {
           const response = await searchProductSuggestions(searchQuery.trim());
-          if (response.success) {
-            setSuggestions(response.data);
+          if (response?.data) {
+            setSuggestions(response.data as SearchSuggestion[]);
             setShowSuggestions(true);
           }
         } catch (error) {

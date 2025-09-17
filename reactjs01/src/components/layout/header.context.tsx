@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { HomeOutlined, UsergroupAddOutlined, SettingOutlined, SearchOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { HomeOutlined, UsergroupAddOutlined, SettingOutlined, SearchOutlined, HeartOutlined, EyeOutlined } from '@ant-design/icons';
 import { Menu, Input } from 'antd';
 import { AuthContext } from '../context/auth.context';
 
@@ -31,17 +31,22 @@ const Header = () => {
       icon: <HomeOutlined />,
     },
     {
-      label: <Link to="/products">Sản phẩm</Link>,
-      key: 'products',
-      icon: <ShoppingOutlined />,
-    },
-    {
-      label: <Link to="/search">Tìm kiếm nâng cao</Link>,
+      label: <Link to="/search">Tìm kiếm sản phẩm</Link>,
       key: 'search',
       icon: <SearchOutlined />,
     },
     ...(auth.isAuthenticated
       ? [
+          {
+            label: <Link to="/favorites">Yêu thích</Link>,
+            key: 'favorites',
+            icon: <HeartOutlined />,
+          },
+          {
+            label: <Link to="/viewed-products">Đã xem</Link>,
+            key: 'viewed',
+            icon: <EyeOutlined />,
+          },
           {
             label: <Link to="/user">Quản lý</Link>,
             key: 'user',
@@ -50,7 +55,7 @@ const Header = () => {
         ]
       : []),
     {
-      label: `${auth?.user?.email ? `Xin chào, ${auth.user.email}` : 'Tài khoản'}`,
+      label: `${auth?.user?.name ? `Xin chào, ${auth.user.name}` : auth?.user?.email ? `Xin chào, ${auth.user.email}` : 'Tài khoản'}`,
       key: 'SubMenu',
       icon: <SettingOutlined />,
       children: [

@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useContext } from 'react';
 
 interface Auth {
   isAuthenticated: boolean;
@@ -40,4 +40,19 @@ export const AuthWrapper = (props: { children: React.ReactNode }) => {
       {props.children}
     </AuthContext.Provider>
   );
+};
+
+// Custom hook for using auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthWrapper');
+  }
+  return {
+    user: context.auth.isAuthenticated ? context.auth.user : null,
+    isAuthenticated: context.auth.isAuthenticated,
+    setAuth: context.setAuth,
+    appLoading: context.appLoading,
+    setAppLoading: context.setAppLoading
+  };
 };

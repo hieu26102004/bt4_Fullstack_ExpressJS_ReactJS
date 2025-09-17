@@ -74,7 +74,12 @@ const elasticSearchService = {
         esQuery.bool.should.push({
           multi_match: {
             query: query.trim(),
-            fields: ['name.keyword^3', 'tags.keyword^2'],
+            fields: [
+              'name^5',
+              'description^3',
+              // Xóa 'tags.keyword^2' khỏi đây
+              'tags^2' // Dùng trường text cho phrase_prefix
+            ],
             type: 'phrase_prefix'
           }
         });
@@ -159,8 +164,35 @@ const elasticSearchService = {
         }
       });
 
-      const hits = response.body.hits;
-      const totalHits = hits.total.value;
+      // Debug logging
+      console.log('Elasticsearch response structure:', {
+        hasResponse: !!response,
+        hasBody: !!response?.body,
+        hasHits: !!response?.body?.hits,
+        bodyKeys: response?.body ? Object.keys(response.body) : [],
+        responseKeys: response ? Object.keys(response) : []
+      });
+
+      // Check if response is valid
+      if (!response || !response.body) {
+        console.error('Invalid Elasticsearch response:', response);
+        throw new Error('Invalid Elasticsearch response structure - missing response or body');
+      }
+
+      // Handle different response structures
+      let hits, totalHits;
+      if (response.body.hits) {
+        hits = response.body.hits;
+        totalHits = hits.total?.value || hits.total || 0;
+      } else if (response.body.body && response.body.body.hits) {
+        // Some versions might nest the response
+        hits = response.body.body.hits;
+        totalHits = hits.total?.value || hits.total || 0;
+      } else {
+        console.error('Elasticsearch response body:', response.body);
+        throw new Error('Invalid Elasticsearch response structure - missing hits');
+      }
+
       const products = hits.hits.map(hit => ({
         ...hit._source,
         _id: hit._id,
@@ -192,9 +224,35 @@ const elasticSearchService = {
 
     } catch (error) {
       console.error('Error in Elasticsearch fuzzy search:', error);
+      console.log('Falling back to Fuse.js search...');
       
-      // Fallback to MongoDB search nếu Elasticsearch lỗi
-      return await this.fallbackSearch(options);
+      try {
+        return await this.fallbackSearch(options);
+      } catch (fallbackError) {
+        console.error('Error in fallback search:', fallbackError);
+        // Return empty but valid response structure
+        return {
+          success: false,
+          data: {
+            products: [],
+            pagination: {
+              currentPage: parseInt(options.page) || 1,
+              totalPages: 0,
+              totalProducts: 0,
+              hasNextPage: false,
+              hasPrevPage: false,
+              limit: parseInt(options.limit) || 12
+            },
+            searchInfo: {
+              query: options.query?.trim() || '',
+              totalHits: 0,
+              maxScore: 0,
+              usingFallback: true,
+              error: 'Cả Elasticsearch và fallback search đều thất bại'
+            }
+          }
+        };
+      }
     }
   },
 

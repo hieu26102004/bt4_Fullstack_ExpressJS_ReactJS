@@ -17,7 +17,8 @@ const handleLogin = async (req, res) => {
 };
 
 const getUser = async (req, res) => {
-  const result = await getUserService();
+  const userId = req.user?.id;
+  const result = await getUserService(userId);
   return res.status(200).json(result);
 };
 

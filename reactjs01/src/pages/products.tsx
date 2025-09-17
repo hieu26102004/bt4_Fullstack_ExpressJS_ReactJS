@@ -3,8 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ProductGrid from '../components/product/ProductGrid';
 import CategoryFilter from '../components/product/CategoryFilter';
 import ProductFilters from '../components/product/ProductFilters';
-import type { Product, ProductFilters as IProductFilters } from '../types/product.types';
-import { getAllProductsApi } from '../util/api';
+import ProductCard from '../components/product/ProductCard';
+import type { Product, ProductFilters as IProductFilters, ApiResponse } from '../types/product.types';
+import { getAllProductsApi, getTrendingProductsApi } from '../util/api';
 
 const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,6 +15,8 @@ const ProductsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
 
   // Parse filters from URL
   const getFiltersFromUrl = (): IProductFilters => {
@@ -72,6 +75,22 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  // Fetch trending products
+  const fetchTrendingProducts = async () => {
+    setTrendingLoading(true);
+    try {
+      const response = await getTrendingProductsApi({ limit: 8, days: 7 });
+      const data = response.data as ApiResponse<Product[]>;
+      if (data?.success) {
+        setTrendingProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching trending products:', error);
+    } finally {
+      setTrendingLoading(false);
+    }
+  };
+
   // Handle filter changes
   const handleFiltersChange = (newFilters: IProductFilters) => {
     const updatedFilters = { ...newFilters, page: 1 }; // Reset to page 1
@@ -98,7 +117,13 @@ const ProductsPage: React.FC = () => {
   // Load initial data
   useEffect(() => {
     fetchProducts(filters);
+    fetchTrendingProducts(); // Load trending products once
   }, [filters]);
+
+  // Load trending products on component mount
+  useEffect(() => {
+    fetchTrendingProducts();
+  }, []);
 
   // Update filters when URL changes
   useEffect(() => {
@@ -113,6 +138,66 @@ const ProductsPage: React.FC = () => {
           <h1>Sản phẩm</h1>
           <p>Khám phá bộ sưu tập sản phẩm đa dạng của chúng tôi</p>
         </div>
+
+        {/* Trending Products Section */}
+        {trendingProducts.length > 0 && (
+          <section style={{
+            marginBottom: '40px',
+            padding: '24px',
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#1a202c',
+                margin: 0
+              }}>
+                🔥 Sản phẩm thịnh hành
+              </h2>
+              <span style={{
+                fontSize: '14px',
+                color: '#718096',
+                backgroundColor: '#fff',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                border: '1px solid #e2e8f0'
+              }}>
+                Top tuần này
+              </span>
+            </div>
+            
+            {trendingLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <p>Đang tải sản phẩm thịnh hành...</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '20px',
+                maxHeight: '600px',
+                overflowY: 'auto'
+              }}>
+                {trendingProducts.slice(0, 8).map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={product}
+                    onProductClick={handleProductClick}
+                    showStats={true}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         <div className="products-layout">
           {/* Sidebar */}

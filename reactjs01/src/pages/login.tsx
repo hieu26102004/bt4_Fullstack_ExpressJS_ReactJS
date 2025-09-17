@@ -1,6 +1,8 @@
 import { Form, Input, Button, notification, Divider, Row, Col } from 'antd';
 import { useNavigate, Link } from 'react-router-dom';
+import { useContext } from 'react';
 import { loginApi } from '../util/api';
+import { AuthContext } from '../components/context/auth.context';
 
 interface LoginResponse {
   code?: number;
@@ -17,6 +19,9 @@ interface LoginResponse {
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("AuthContext not found");
+  const { setAuth } = context;
 
   const onFinish = async (values: any) => {
     const { email, password } = values;
@@ -26,6 +31,17 @@ const LoginPage = () => {
       if (data?.access_token) {
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Update auth context immediately
+        setAuth({
+          isAuthenticated: true,
+          user: {
+            email: data.user?.email || '',
+            name: data.user?.name || '',
+            id: data.user?._id || '',
+          },
+        });
+        
         notification.success({
           message: 'Đăng nhập thành công',
           description: `Chào mừng ${data.user?.name || data.user?.email}`,

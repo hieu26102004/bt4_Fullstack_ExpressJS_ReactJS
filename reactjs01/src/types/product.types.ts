@@ -25,6 +25,8 @@ export interface Product {
   rating: number;
   reviewCount: number;
   viewCount?: number;
+  purchaseCount?: number;
+  favoriteCount?: number;
   createdAt: string;
   updatedAt: string;
   _score?: number; // For search relevance
@@ -117,4 +119,133 @@ export interface SearchInfo {
   totalHits: number;
   maxScore?: number;
   usingFallback?: boolean;
+}
+
+// ========== NEW ENHANCED FEATURE TYPES ==========
+
+// Favorite Product Types
+export interface FavoriteProduct {
+  _id: string;
+  userId: string;
+  productId: Product | string;
+  createdAt: string;
+}
+
+export interface FavoriteResponse {
+  favorites: FavoriteProduct[];
+  pagination: Pagination;
+}
+
+// Viewed Product Types
+export interface ViewedProduct {
+  _id: string;
+  userId: string;
+  productId: Product | string;
+  viewCount: number;
+  lastViewedAt: string;
+  createdAt: string;
+}
+
+export interface ViewedProductResponse {
+  viewedProducts: ViewedProduct[];
+  pagination: Pagination;
+}
+
+export interface ViewStats {
+  totalViews: number;
+  uniqueProducts: number;
+  lastViewed: string | null;
+}
+
+// Product Review Types
+export interface ProductReview {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  productId: string;
+  rating: number;
+  comment?: string;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewResponse {
+  reviews: ProductReview[];
+  pagination: Pagination;
+}
+
+export interface AddReviewRequest {
+  productId: string;
+  rating: number;
+  comment?: string;
+}
+
+// Product Purchase Types
+export interface ProductPurchase {
+  _id: string;
+  userId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  totalAmount: number;
+  orderStatus: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  purchaseDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseRequest {
+  productId: string;
+  quantity: number;
+  price: number;
+}
+
+// Product Statistics Types
+export interface ProductStats {
+  productInfo: {
+    viewCount: number;
+    favoriteCount: number;
+    purchaseCount: number;
+    rating: number;
+    reviewCount: number;
+  };
+  purchaseStats: Array<{
+    _id: string;
+    count: number;
+    totalQuantity: number;
+    totalAmount: number;
+  }>;
+  ratingStats: Array<{
+    _id: number;
+    count: number;
+  }>;
+}
+
+// Similar Products Types
+export interface SimilarProductsResponse {
+  byCategory: Product[];
+  byTags: Product[];
+  byPrice: Product[];
+  recommended: Product[];
+}
+
+// API Request/Response Types for new features
+export interface ToggleFavoriteRequest {
+  productId: string;
+}
+
+export interface AddViewedProductRequest {
+  productId: string;
+}
+
+export interface FavoriteStatusResponse {
+  isFavorite: boolean;
+}
+
+export interface FavoriteCountResponse {
+  favoriteCount: number;
 }

@@ -46,6 +46,7 @@ const UserPage = () => {
 
   return (
     <div style={{ padding: 30 }}>
+      {/* User Table */}
       <Table
         bordered
         dataSource={dataSource}

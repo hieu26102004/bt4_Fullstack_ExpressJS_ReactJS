@@ -74,7 +74,11 @@ const loginService = async (email, password) => {
     }
 
     const token = jwt.sign(
-      { email: user.email, name: user.name },
+      { 
+        id: user._id,
+        email: user.email, 
+        name: user.name 
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -93,13 +97,28 @@ const loginService = async (email, password) => {
   }
 };
 
-const getUserService = async () => {
+const getUserService = async (userId) => {
   try {
-    const result = await User.find({}).select("-password");
-    return result;
+    if (!userId) {
+      return { code: 1, message: "User ID is required" };
+    }
+    
+    const result = await User.findById(userId).select("-password");
+    if (!result) {
+      return { code: 2, message: "User not found" };
+    }
+    
+    return { 
+      code: 0,
+      data: {
+        id: result._id,
+        email: result.email,
+        name: result.name
+      }
+    };
   } catch (error) {
     console.log(error);
-    return null;
+    return { code: 3, message: "Database error" };
   }
 };
 
